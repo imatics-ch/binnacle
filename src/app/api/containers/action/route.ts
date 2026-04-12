@@ -8,6 +8,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing container id or action' }, { status: 400 });
     }
 
+    if (process.env.DEMO_MODE === 'true') {
+      // Simulate fake latency delay to make UI look organic and responsive
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      return NextResponse.json({ success: true, message: `Demo mode intercepted ${action} action.` });
+    }
+
     const dockerOptions = process.env.DOCKER_SOCKET_PATH ? { socketPath: process.env.DOCKER_SOCKET_PATH } : {};
     const docker = new Docker(dockerOptions);
 
