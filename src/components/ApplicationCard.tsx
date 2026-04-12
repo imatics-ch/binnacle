@@ -140,7 +140,7 @@ export default function ApplicationCard({ app, expandDetails = true, backgroundS
       {/* Dynamic Background Styling */}
       {isPhotos && (
          <div className="absolute inset-0 z-0 overflow-hidden bg-slate-50 dark:bg-[#0f1523] group-hover:scale-105 transition-transform duration-1000 ease-out">
-            {unsplashUrl && (
+            {unsplashUrl && unsplashUrl.startsWith('https://') && (
               <img 
                  src={unsplashUrl}
                  alt="Background"
