@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  dashboard:
+    image: ghcr.io/imatics-ch/binnacle:latest
+    container_name: binnacle-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - TRAEFIK_API_URLS=${TRAEFIK_API_URLS:-http://traefik:8080}
+      
+      # --- UI Customizations ---
+      - HEADER_LINE_1=${HEADER_LINE_1:-Binnacle}
+      - HEADER_LINE_2=${HEADER_LINE_2:-Navigate your homelab.}
+      - HEADER_DESCRIPTION=${HEADER_DESCRIPTION:-}
+      - CARDS_PER_ROW=${CARDS_PER_ROW:-4}
+      - EXPAND_DETAILS=${EXPAND_DETAILS:-false}
+      - CARD_TELEMETRY=${CARD_TELEMETRY:-expand}
+      - CONTAINER_CONTROL=${CONTAINER_CONTROL:-false}
+      
+      # --- Aesthetics & Backgrounds ---
+      - PAGE_BACKGROUND_STYLE=${PAGE_BACKGROUND_STYLE:-blob} # mesh, grid, beams, blob, none
+      - CARDS_BACKGROUND_STYLE=${CARDS_BACKGROUND_STYLE:-circle} # wave, colors, circle, photos, none
+      - CARDS_BACKGROUND_PHOTOS_TAGS=${CARDS_BACKGROUND_PHOTOS_TAGS:-servers,technology}
+      - UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY:-}
+      
+      # --- Docker Metadata Toggles ---
+      - APP_NAME_DOCKER_LABEL=${APP_NAME_DOCKER_LABEL:-binnacle.title}
+      - APP_NAME_DOCKER_GROUP=${APP_NAME_DOCKER_GROUP:-binnacle.group}
+      
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # DOCKER_SOCKET_PATH default is used automatically for linux unix sockets
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard.example.com`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=3000"
+      
+      # Optional: Binnacle Customization Labels
+      - "binnacle.title=Binnacle Dashboard"
+      - "binnacle.group=Infrastructure"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
