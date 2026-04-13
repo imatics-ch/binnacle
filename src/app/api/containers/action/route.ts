@@ -8,10 +8,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing container id or action' }, { status: 400 });
     }
 
+    // Validate action is one of the allowed values
+    const allowedActions = ['start', 'stop', 'restart'];
+    if (!allowedActions.includes(action)) {
+      return NextResponse.json({ error: 'Invalid action. Must be start, stop, or restart' }, { status: 400 });
+    }
+
+    // Validate container ID format (64-char hex or valid Docker name)
+    const validIdPattern = /^[a-zA-Z0-9][a-zA-Z0-9_.-]+$/;
+    if (!validIdPattern.test(id) || id.length > 64) {
+      return NextResponse.json({ error: 'Invalid container ID format' }, { status: 400 });
+    }
+
     if (process.env.DEMO_MODE === 'true') {
-      // Simulate fake latency delay to make UI look organic and responsive
       await new Promise((resolve) => setTimeout(resolve, 800));
-      return NextResponse.json({ success: true, message: `Demo mode intercepted ${action} action.` });
+      return NextResponse.json({ success: true, message: `Demo: ${action} acknowledged` });
     }
 
     const dockerOptions = process.env.DOCKER_SOCKET_PATH ? { socketPath: process.env.DOCKER_SOCKET_PATH } : {};
@@ -19,15 +30,13 @@ export async function POST(req: Request) {
 
     const container = docker.getContainer(id);
 
-    // Validate action
+    // Execute validated action
     if (action === 'start') {
       await container.start();
     } else if (action === 'stop') {
       await container.stop();
     } else if (action === 'restart') {
       await container.restart();
-    } else {
-      return NextResponse.json({ error: 'Invalid action. Must be start, stop, or restart' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, message: `Container ${action} successful` });

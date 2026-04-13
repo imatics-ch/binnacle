@@ -25,13 +25,19 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-COPY --from=builder /app/public ./public
+# Create non-root user for security (prevents container escape via Docker socket)
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # Automatically setup standalone mode via next.config.ts
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 EXPOSE 3000
 
 ENV HOSTNAME="0.0.0.0"
+
+USER nextjs
 
 CMD ["node", "server.js"]
