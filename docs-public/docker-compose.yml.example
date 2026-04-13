@@ -29,6 +29,11 @@ services:
       - APP_NAME_DOCKER_LABEL=${APP_NAME_DOCKER_LABEL:-binnacle.title}
       - APP_NAME_DOCKER_GROUP=${APP_NAME_DOCKER_GROUP:-binnacle.group}
       
+      
+    # Grant the non-root container user access to the Docker socket.
+    # Find your host's docker GID with: stat -c '%g' /var/run/docker.sock
+    group_add:
+      - "999" # Common default — adjust to match your host's docker GID
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro # DOCKER_SOCKET_PATH default is used automatically for linux unix sockets
     labels:

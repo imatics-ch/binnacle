@@ -69,7 +69,8 @@ export async function GET() {
           console.warn(`Traefik instance at ${fetchUrl} returned status: ${resp.status} ${resp.statusText}`);
         }
       } catch (err: any) {
-        console.warn(`Could not connect to Traefik at ${baseUrl}: ${err.message}`);
+        const sanitizedUrl = baseUrl.replace(/\/\/[^@]+@/, '//***:***@');
+        console.warn(`Could not connect to Traefik at ${sanitizedUrl}: ${err.message}`);
       }
     }
 
@@ -195,7 +196,21 @@ export async function GET() {
           }
 
           if (res.ok) {
-            const html = await res.text();
+            // Limit body read to 64KB — favicon links are always in <head>
+            const reader = res.body?.getReader();
+            let htmlChunks: Uint8Array[] = [];
+            let totalSize = 0;
+            const MAX_SIZE = 65536; // 64KB
+            if (reader) {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done || totalSize >= MAX_SIZE) break;
+                htmlChunks.push(value);
+                totalSize += value.length;
+              }
+              reader.cancel();
+            }
+            const html = new TextDecoder().decode(Buffer.concat(htmlChunks).slice(0, MAX_SIZE));
             // Look for <link rel="icon" href="..."> or <link rel="shortcut icon" href="..."> or <link rel="apple-touch-icon" href="...">
             const faviconMatch = html.match(/<link[^>]*rel=["'](?:shortcut )?(?:apple-touch-)?icon["'][^>]*href=["']([^"']+)["'][^>]*>/i);
             if (faviconMatch && faviconMatch[1]) {
